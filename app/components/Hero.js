@@ -60,29 +60,14 @@ export default function Hero({ isDark }) {
 
   const marketplaceCount = brands.length > 0 ? brands.length : certCount;
   const liveCount = brands.filter((brand) => brand.status?.toLowerCase().includes("live")).length;
-  const featuredBrands = brands.length > 0 ? brands.slice(0, 4) : [];
+  const featuredBrands = brands.length > 0 ? brands.slice(0, 1) : [];
   const formattedPartners = `${marketplaceCount}+`;
   const formattedActive = liveCount > 0 ? `${liveCount}+` : `${marketplaceCount}+`;
 
   return (
     <section className={`relative overflow-hidden pt-6 pb-20 lg:pt-8 lg:pb-28 transition-all duration-300 ${isDark ? "bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950" : "bg-gradient-to-b from-white via-slate-50/50 to-white"
       }`}>
-      {/* Premium custom thin scrollbars */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: ${isDark ? 'rgba(156, 163, 175, 0.2)' : 'rgba(156, 163, 175, 0.4)'};
-          border-radius: 2px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: ${isDark ? 'rgba(156, 163, 175, 0.4)' : 'rgba(156, 163, 175, 0.6)'};
-        }
-      `}} />
+
       {/* Aesthetic background decorative elements */}
       <div className={`absolute top-0 right-1/4 w-96 h-96 rounded-full blur-3xl -z-10 transition-colors duration-300 ${isDark ? "bg-blue-950/20" : "bg-blue-100/30"
         }`} />
@@ -169,7 +154,7 @@ export default function Hero({ isDark }) {
 
           {/* Right Column: Abstract Glassmorphism / Geometric Wireframe */}
           <div className="lg:col-span-5 relative w-full flex items-center justify-center">
-            <div className="relative w-full max-w-[420px] h-[460px] lg:h-auto lg:aspect-square">
+            <div className="relative w-full max-w-[420px] h-[390px] lg:h-auto lg:aspect-square">
               {/* Visual Glow behind card */}
               <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 blur opacity-25" />
 
@@ -215,7 +200,7 @@ export default function Hero({ isDark }) {
                     </span>
                   </div>
 
-                  <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1 custom-scrollbar">
+                  <div className="space-y-3">
                     {featuredBrands.length > 0 ? (
                       featuredBrands.map((brand) => (
                         <div key={brand.id} className={`rounded-3xl p-3 border ${isDark ? "border-slate-800 bg-slate-900/90" : "border-slate-200 bg-white/90"}`}>
