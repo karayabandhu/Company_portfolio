@@ -153,7 +153,7 @@ export default function Hero({ isDark }) {
 
           {/* Right Column: Abstract Glassmorphism / Geometric Wireframe */}
           <div className="lg:col-span-5 relative w-full flex items-center justify-center">
-            <div className="relative w-full max-w-[420px] aspect-square">
+            <div className="relative w-full max-w-[420px] h-[460px] lg:h-auto lg:aspect-square">
               {/* Visual Glow behind card */}
               <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-600 blur opacity-25" />
 
