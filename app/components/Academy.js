@@ -75,16 +75,38 @@ export default function Academy({ isDark }) {
   // PostMessage Event Listener for YouTube embed player states
   useEffect(() => {
     const handleYoutubeMessage = (event) => {
-      if (event.origin.includes("youtube.com")) {
-        try {
-          const data = JSON.parse(event.data);
-          // playerState === 0 is YouTube API signal for ended video
-          if (data.event === "info_delivery" && data.info?.playerState === 0) {
-            handleVideoEnded();
-          }
-        } catch (e) {
-          // ignore non-JSON messages
+      const isYT = event.origin.includes("youtube.com") || event.origin.includes("youtube-nocookie.com");
+      if (!isYT) return;
+
+      try {
+        let data = event.data;
+        if (typeof data === "string") {
+          data = JSON.parse(data);
         }
+
+        if (!data) return;
+
+        // Perform listening handshake on first contact
+        if (data.event === "initialDelivery" || data.event === "onReady") {
+          if (event.source && typeof event.source.postMessage === "function") {
+            event.source.postMessage(JSON.stringify({
+              event: "listening",
+              id: 1
+            }), event.origin);
+          }
+        }
+
+        // Detect if video ended (playerState === 0)
+        const isEnded = data.info?.playerState === 0 || 
+                        data.playerState === 0 || 
+                        (data.event === "onStateChange" && data.info === 0) || 
+                        (data.event === "info_delivery" && data.info?.playerState === 0);
+
+        if (isEnded) {
+          handleVideoEnded();
+        }
+      } catch (e) {
+        // ignore errors
       }
     };
     window.addEventListener("message", handleYoutubeMessage);
@@ -617,13 +639,22 @@ export default function Academy({ isDark }) {
                   // Real Interactive Video Player Container
                   <div className="absolute inset-0 bg-black">
                     {renderVideoPlayer()}
-                    <button
-                      onClick={() => setIsVideoPlaying(false)}
-                      className="absolute top-4 right-4 z-20 bg-slate-950/85 hover:bg-slate-900 text-white rounded-full px-3 py-1.5 border border-white/10 hover:scale-105 active:scale-95 transition-all text-[11px] font-bold flex items-center gap-1 cursor-pointer shadow-lg"
-                      title="Close Video Player"
-                    >
-                      ✕ Close Video
-                    </button>
+                    <div className="absolute top-4 right-4 z-20 flex gap-2">
+                      <button
+                        onClick={handleVideoEnded}
+                        className="bg-green-600/90 hover:bg-green-700 text-white rounded-full px-3.5 py-1.5 border border-green-500/20 hover:scale-105 active:scale-95 transition-all text-[11px] font-bold flex items-center gap-1.5 cursor-pointer shadow-lg"
+                        title="Mark this module as completed and advance"
+                      >
+                        ✓ Complete Step
+                      </button>
+                      <button
+                        onClick={() => setIsVideoPlaying(false)}
+                        className="bg-slate-950/85 hover:bg-slate-900 text-white rounded-full px-3 py-1.5 border border-white/10 hover:scale-105 active:scale-95 transition-all text-[11px] font-bold flex items-center gap-1 cursor-pointer shadow-lg"
+                        title="Close Video Player"
+                      >
+                        ✕ Close Video
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   // Initial Video Thumbnail Overlay with Play Button
