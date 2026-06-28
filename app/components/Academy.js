@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Script from "next/script";
+import RazorpayPayment from "./RazorpayPayment";
 
 export default function Academy({ isDark }) {
   const [mounted, setMounted] = useState(false);
@@ -37,6 +38,7 @@ export default function Academy({ isDark }) {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState("1-year");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isRazorpayOpen, setIsRazorpayOpen] = useState(false);
 
   // Fallback timer to show "Complete Step" button even if YouTube postMessage is blocked
   useEffect(() => {
@@ -210,6 +212,7 @@ export default function Academy({ isDark }) {
     setShowSubscriptionModal(false);
     setSelectedPlan("1-year");
     setIsProcessingPayment(false);
+    setIsRazorpayOpen(false);
   };
 
   const handleStepClick = (stepId) => {
@@ -266,16 +269,26 @@ export default function Academy({ isDark }) {
     setShowSubscriptionModal(true);
   };
 
-  const handlePaymentAndClaim = async () => {
-    setIsProcessingPayment(true);
-    setTimeout(async () => {
-      setIsProcessingPayment(false);
-      setShowSubscriptionModal(false);
-      await triggerCertificateGeneration();
-    }, 2000); // 2 seconds payment processing simulation
+  const handlePaymentAndClaim = () => {
+    setIsRazorpayOpen(true);
   };
 
-  const triggerCertificateGeneration = async () => {
+  const handleRazorpaySuccess = async (response) => {
+    setIsRazorpayOpen(false);
+    setShowSubscriptionModal(false);
+    await triggerCertificateGeneration(response);
+  };
+
+  const handleRazorpayCancel = () => {
+    setIsRazorpayOpen(false);
+  };
+
+  const handleRazorpayError = (errMsg) => {
+    setIsRazorpayOpen(false);
+    alert("Payment verification failed: " + errMsg);
+  };
+
+  const triggerCertificateGeneration = async (paymentDetails = null) => {
     setCertGenerateAnimation(true);
 
     // Construct the certificate claim payload
@@ -284,7 +297,11 @@ export default function Academy({ isDark }) {
       name: loggedInPartnerName,
       mobile: loggedInPartnerMobile,
       passcode: providerPasskey || "KB-BANDHU-2026", // Fallback to default passkey
-      claimedAt: currentDate
+      claimedAt: currentDate,
+      paymentId: paymentDetails?.razorpay_payment_id || "pay_manual_" + Date.now(),
+      orderId: paymentDetails?.razorpay_order_id || "order_manual_" + Date.now(),
+      planSelected: selectedPlan === "1-year" ? "1-Year Verification Plan" : "3-Year Verification Plan",
+      amountPaid: selectedPlan === "1-year" ? 99 : 199
     };
 
     try {
@@ -1166,6 +1183,17 @@ export default function Academy({ isDark }) {
         </div>,
         document.body
       )}
+
+      {/* Razorpay Integration Component */}
+      <RazorpayPayment
+        isOpen={isRazorpayOpen}
+        amount={selectedPlan === "1-year" ? 99 : 199}
+        partnerName={loggedInPartnerName}
+        partnerMobile={loggedInPartnerMobile}
+        onSuccess={handleRazorpaySuccess}
+        onCancel={handleRazorpayCancel}
+        onError={handleRazorpayError}
+      />
     </section>
   );
 }
