@@ -30,6 +30,33 @@ export default function Academy({ isDark }) {
   const [certGenerateAnimation, setCertGenerateAnimation] = useState(false);
   const [currentDate, setCurrentDate] = useState("");
   const [maxTime, setMaxTime] = useState(0);
+  const [isVideoEnded, setIsVideoEnded] = useState(false);
+  const [playTime, setPlayTime] = useState(0);
+
+  // Subscription Modal States
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState("1-year");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Fallback timer to show "Complete Step" button even if YouTube postMessage is blocked
+  useEffect(() => {
+    let interval;
+    if (isVideoPlaying && !isVideoEnded) {
+      interval = setInterval(() => {
+        setPlayTime((prev) => {
+          if (prev >= 30) { // 30 seconds fallback threshold
+            setIsVideoEnded(true);
+            clearInterval(interval);
+            return 0;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } else {
+      setPlayTime(0);
+    }
+    return () => clearInterval(interval);
+  }, [isVideoPlaying, isVideoEnded]);
 
   useEffect(() => {
     // Check if provider session was previously verified
@@ -179,6 +206,10 @@ export default function Academy({ isDark }) {
     setCompletedSteps([]);
     setUnlockedSteps([1]);
     setActiveStep(1);
+    setIsVideoEnded(false);
+    setShowSubscriptionModal(false);
+    setSelectedPlan("1-year");
+    setIsProcessingPayment(false);
   };
 
   const handleStepClick = (stepId) => {
@@ -186,12 +217,14 @@ export default function Academy({ isDark }) {
       setActiveStep(stepId);
       setIsVideoPlaying(false);
       setMaxTime(0);
+      setIsVideoEnded(false);
     }
   };
 
   const handlePlayVideo = () => {
     setIsVideoPlaying(true);
     setMaxTime(0);
+    setIsVideoEnded(false);
   };
 
   const handleTimeUpdate = (e) => {
@@ -205,6 +238,8 @@ export default function Academy({ isDark }) {
   };
 
   const handleVideoEnded = () => {
+    setIsVideoEnded(true);
+
     setCompletedSteps((prevCompleted) => {
       if (prevCompleted.includes(activeStep)) return prevCompleted;
       const nextCompleted = [...prevCompleted, activeStep];
@@ -215,15 +250,29 @@ export default function Academy({ isDark }) {
           prevUnlocked.includes(nextStepId) ? prevUnlocked : [...prevUnlocked, nextStepId]
         );
 
-        // Auto-advance to the next video after 1 second delay
+        // Auto-advance to the next video after 2 seconds delay
         setTimeout(() => {
           setActiveStep(nextStepId);
           setIsVideoPlaying(true);
           setMaxTime(0);
-        }, 1000);
+          setIsVideoEnded(false);
+        }, 2000);
       }
       return nextCompleted;
     });
+  };
+
+  const handleGenerateClick = () => {
+    setShowSubscriptionModal(true);
+  };
+
+  const handlePaymentAndClaim = async () => {
+    setIsProcessingPayment(true);
+    setTimeout(async () => {
+      setIsProcessingPayment(false);
+      setShowSubscriptionModal(false);
+      await triggerCertificateGeneration();
+    }, 2000); // 2 seconds payment processing simulation
   };
 
   const triggerCertificateGeneration = async () => {
@@ -640,13 +689,15 @@ export default function Academy({ isDark }) {
                   <div className="absolute inset-0 bg-black">
                     {renderVideoPlayer()}
                     <div className="absolute top-4 right-4 z-20 flex gap-2">
-                      <button
-                        onClick={handleVideoEnded}
-                        className="bg-green-600/90 hover:bg-green-700 text-white rounded-full px-3.5 py-1.5 border border-green-500/20 hover:scale-105 active:scale-95 transition-all text-[11px] font-bold flex items-center gap-1.5 cursor-pointer shadow-lg"
-                        title="Mark this module as completed and advance"
-                      >
-                        ✓ Complete Step
-                      </button>
+                      {isVideoEnded && (
+                        <button
+                          onClick={handleVideoEnded}
+                          className="bg-green-600/90 hover:bg-green-700 text-white rounded-full px-3.5 py-1.5 border border-green-500/20 hover:scale-105 active:scale-95 transition-all text-[11px] font-bold flex items-center gap-1.5 cursor-pointer shadow-lg"
+                          title="Mark this module as completed and advance"
+                        >
+                          ✓ Complete Step
+                        </button>
+                      )}
                       <button
                         onClick={() => setIsVideoPlaying(false)}
                         className="bg-slate-950/85 hover:bg-slate-900 text-white rounded-full px-3 py-1.5 border border-white/10 hover:scale-105 active:scale-95 transition-all text-[11px] font-bold flex items-center gap-1 cursor-pointer shadow-lg"
@@ -726,7 +777,7 @@ export default function Academy({ isDark }) {
                   <div className="flex-shrink-0">
                     <button
                       disabled={!isConductChecked || certGenerateAnimation}
-                      onClick={triggerCertificateGeneration}
+                      onClick={handleGenerateClick}
                       className={`w-full md:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${isConductChecked && !certGenerateAnimation
                           ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0"
                           : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50"
@@ -935,6 +986,182 @@ export default function Academy({ isDark }) {
               </div>
 
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* [Premium Subscription / Verification Modal] */}
+      {showSubscriptionModal && mounted && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in pointer-events-auto">
+          <div className="relative w-full max-w-[650px] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-6 sm:p-8 text-white overflow-hidden transform scale-100 transition-all duration-300 animate-scale-up pointer-events-auto max-h-[90vh] overflow-y-auto">
+            
+            {/* Background Glows */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl -z-10" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl -z-10" />
+
+            {/* Close Button */}
+            <button
+              onClick={() => setShowSubscriptionModal(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors z-20 cursor-pointer"
+              aria-label="Close modal"
+            >
+              <svg width="20" height="20" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {isProcessingPayment ? (
+              // Payment processing animation
+              <div className="flex flex-col items-center justify-center py-16 space-y-6 text-center">
+                <div className="relative w-20 h-20">
+                  <div className="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-t-blue-500 border-r-indigo-500 animate-spin"></div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold tracking-tight text-white">
+                    Processing Platform Verification...
+                  </h3>
+                  <p className="text-sm text-slate-400">
+                    Connecting to secure payment gateway. Please do not close or refresh this page.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              // Main Subscription Content
+              <div className="flex flex-col space-y-6">
+                
+                {/* Header */}
+                <div className="text-center space-y-2">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full text-2xl mb-1 shadow-lg shadow-amber-500/5 animate-[bounce_2s_infinite]">
+                    🏆
+                  </div>
+                  <span className="block text-xs font-bold text-blue-400 uppercase tracking-widest animate-pulse">
+                    Congratulations!
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">
+                    Activate Your Verified Provider Status
+                  </h2>
+                  <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+                    You have successfully completed the Provider Learning Program and passed the certification assessment.
+                    To activate your Verified Provider status and start receiving customer requests, please select a Platform Verification Plan.
+                  </p>
+                </div>
+
+                {/* Plan Content Columns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  
+                  {/* Left Column: What is Included */}
+                  <div className="bg-slate-950/40 border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block border-b border-slate-800 pb-1.5">
+                      What is included?
+                    </span>
+                    <ul className="space-y-2 text-xs text-slate-350">
+                      {[
+                        "Skilled Ustaad Verified Certificate",
+                        "Verified Provider Badge on Your Profile",
+                        "Listed on the Platform",
+                        "Access to Customer Booking Requests",
+                        "Digital Work History Record",
+                        "Profile Visibility Across All Zones",
+                        "Guaranteed Digital Payments",
+                        "Priority Customer Support",
+                        "Free Training Updates"
+                      ].map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-green-500 font-bold flex-shrink-0">✓</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Right Column: Plans Available */}
+                  <div className="space-y-4">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Plans Available:
+                    </span>
+                    
+                    {/* 1 Year Plan */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPlan("1-year")}
+                      className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between cursor-pointer ${
+                        selectedPlan === "1-year"
+                          ? "bg-blue-600/10 border-blue-500 shadow-md shadow-blue-500/5 text-white"
+                          : "bg-slate-950/20 border-slate-800 hover:bg-slate-950/50 hover:border-slate-700 text-slate-400"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <span className={`text-xs font-bold block ${selectedPlan === "1-year" ? "text-blue-400" : "text-slate-300"}`}>
+                          1-Year Verification Plan
+                        </span>
+                        <span className="text-[10px] text-slate-550 block">
+                          Platform Fee
+                        </span>
+                      </div>
+                      <span className="text-xl font-bold font-mono text-white">₹99</span>
+                    </button>
+
+                    {/* 3 Year Plan */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPlan("3-year")}
+                      className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between cursor-pointer ${
+                        selectedPlan === "3-year"
+                          ? "bg-indigo-600/10 border-indigo-500 shadow-md shadow-indigo-500/5 text-white"
+                          : "bg-slate-950/20 border-slate-800 hover:bg-slate-950/50 hover:border-slate-700 text-slate-400"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <span className={`text-xs font-bold block ${selectedPlan === "3-year" ? "text-indigo-400" : "text-slate-300"}`}>
+                          3-Year Verification Plan
+                        </span>
+                        <span className="text-[10px] text-slate-550 block">
+                          Platform Fee
+                        </span>
+                      </div>
+                      <span className="text-xl font-bold font-mono text-white">₹199</span>
+                    </button>
+
+                  </div>
+
+                </div>
+
+                {/* Plan Helper Description */}
+                <div className="text-center px-2 py-3 bg-slate-950/30 rounded-xl border border-slate-800/55">
+                  <p className="text-[10px] text-slate-400 leading-relaxed max-w-lg mx-auto">
+                    This plan helps you get more customers, build your reputation with every job you complete, receive direct booking requests in your zone, and grow your income steadily on the platform.
+                  </p>
+                </div>
+
+                {/* Footer and Call to Action */}
+                <div className="flex flex-col items-center space-y-3 pt-2 border-t border-slate-800">
+                  <span className="text-[10px] text-slate-500 text-center">
+                    After payment, your certificate and verification badge will be issued instantly.
+                  </span>
+                  
+                  <div className="flex gap-3 w-full justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowSubscriptionModal(false)}
+                      className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-400 bg-slate-850 hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePaymentAndClaim}
+                      className="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-blue-500/10 cursor-pointer"
+                    >
+                      Pay & Activate Status
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
           </div>
         </div>,
         document.body
