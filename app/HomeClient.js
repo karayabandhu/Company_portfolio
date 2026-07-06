@@ -7,6 +7,7 @@ import About from "./components/About";
 import Brands from "./components/Brands";
 import Academy from "./components/Academy";
 import Careers from "./components/Careers";
+import Recognition from "./components/Recognition";
 import Footer from "./components/Footer";
 
 export default function HomeClient() {
@@ -64,6 +65,9 @@ export default function HomeClient() {
 
       {/* Strategic Talent Board */}
       <Careers isDark={isDark} />
+
+      {/* Official Recognition & Startup India Certificate */}
+      <Recognition isDark={isDark} />
 
       {/* Premium Bottom Footer */}
       <Footer />

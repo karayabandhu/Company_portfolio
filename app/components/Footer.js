@@ -89,6 +89,9 @@ export default function Footer() {
                 <a href="/#careers" className="hover:text-blue-500 transition-colors">Careers</a>
               </li>
               <li>
+                <a href="/#recognition" className="hover:text-blue-500 transition-colors">Recognition</a>
+              </li>
+              <li>
                 <a href="/press" className="hover:text-blue-500 transition-colors">Press & Media</a>
               </li>
             </ul>

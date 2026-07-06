@@ -57,6 +57,10 @@ export default function Header({ isDark, toggleTheme }) {
             }`}>
             Careers
           </a>
+          <a href="/#recognition" className={`text-sm font-semibold transition-colors duration-200 ${isDark ? "text-slate-350 hover:text-blue-400" : "text-slate-600 hover:text-blue-600"
+            }`}>
+            Recognition
+          </a>
           <a href="/press" className={`text-sm font-semibold transition-colors duration-200 ${isDark ? "text-slate-350 hover:text-blue-400" : "text-slate-600 hover:text-blue-600"
             }`}>
             Press & Media
@@ -169,6 +173,14 @@ export default function Header({ isDark, toggleTheme }) {
               }`}
           >
             Careers
+          </a>
+          <a
+            href="/#recognition"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`block text-base font-semibold py-1 transition-colors ${isDark ? "text-slate-355 hover:text-blue-400" : "text-slate-700 hover:text-blue-600"
+              }`}
+          >
+            Recognition
           </a>
           <a
             href="/press"
