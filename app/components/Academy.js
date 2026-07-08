@@ -20,6 +20,7 @@ export default function Academy({ isDark }) {
   // Custom dynamic partner information
   const [loggedInPartnerName, setLoggedInPartnerName] = useState("Verified Bandhu Partner");
   const [loggedInPartnerMobile, setLoggedInPartnerMobile] = useState("9876543210");
+  const [hasPaid, setHasPaid] = useState(false);
 
   // Academy Interactive States
   const [activeStep, setActiveStep] = useState(1);
@@ -71,6 +72,8 @@ export default function Academy({ isDark }) {
       if (savedMobile) setLoggedInPartnerMobile(savedMobile);
       const savedPasscode = localStorage.getItem("kb-provider-partner-passcode");
       if (savedPasscode) setProviderPasskey(savedPasscode);
+      const savedPaid = localStorage.getItem("kb-provider-has-paid") === "true";
+      if (savedPaid) setHasPaid(true);
     }
 
     // Set today's date for certificate
@@ -89,6 +92,11 @@ export default function Academy({ isDark }) {
         if (res.ok) {
           const data = await res.json();
           setAcademyModules(data);
+          if (localStorage.getItem("kb-provider-has-paid") === "true") {
+            const allIds = data.map((m) => m.id);
+            setUnlockedSteps(allIds);
+            setCompletedSteps(allIds);
+          }
         }
       } catch (err) {
         console.error("Failed to load academy modules:", err);
@@ -199,8 +207,10 @@ export default function Academy({ isDark }) {
     localStorage.removeItem("kb-provider-partner-name");
     localStorage.removeItem("kb-provider-partner-mobile");
     localStorage.removeItem("kb-provider-partner-passcode");
+    localStorage.removeItem("kb-provider-has-paid");
     setProviderMobile("");
     setProviderPasskey("");
+    setHasPaid(false);
     setLoggedInPartnerName("Verified Bandhu Partner");
     setLoggedInPartnerMobile("9876543210");
     setIsVideoPlaying(false);
@@ -266,7 +276,11 @@ export default function Academy({ isDark }) {
   };
 
   const handleGenerateClick = () => {
-    setShowSubscriptionModal(true);
+    if (hasPaid) {
+      triggerCertificateGeneration();
+    } else {
+      setShowSubscriptionModal(true);
+    }
   };
 
   const handlePaymentAndClaim = () => {
@@ -276,6 +290,13 @@ export default function Academy({ isDark }) {
   const handleRazorpaySuccess = async (response) => {
     setIsRazorpayOpen(false);
     setShowSubscriptionModal(false);
+    setHasPaid(true);
+    localStorage.setItem("kb-provider-has-paid", "true");
+    if (academyModules.length > 0) {
+      const allIds = academyModules.map((m) => m.id);
+      setUnlockedSteps(allIds);
+      setCompletedSteps(allIds);
+    }
     await triggerCertificateGeneration(response);
   };
 
@@ -448,10 +469,23 @@ export default function Academy({ isDark }) {
 
           {/* Connected Provider Profile Badge */}
           {isProviderVerified && (
-            <div className="mt-6 inline-flex items-center gap-3 bg-slate-800 border border-slate-750 px-4 py-2 rounded-xl text-xs font-bold shadow-lg">
+            <div className="mt-6 inline-flex items-center gap-3 bg-slate-800 border border-slate-750 px-4 py-2 rounded-xl text-xs font-bold shadow-lg flex-wrap justify-center">
               <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
               <span className="text-slate-350">Verified Partner:</span>
               <span className="text-white font-mono">{loggedInPartnerName} (+91 {loggedInPartnerMobile})</span>
+              
+              {hasPaid && (
+                <>
+                  <div className="w-px h-4 bg-slate-700 hidden sm:block" />
+                  <button 
+                    onClick={() => triggerCertificateGeneration()} 
+                    className="text-amber-400 hover:text-amber-300 font-bold transition-colors cursor-pointer"
+                  >
+                    View Certificate
+                  </button>
+                </>
+              )}
+
               <div className="w-px h-4 bg-slate-700" />
               <button
                 onClick={handleLogOut}

@@ -17,6 +17,7 @@ export default function Brands({ isDark }) {
           desc: b.desc,
           status: b.status,
           statusType: b.status.includes("Live") ? "success" : "muted",
+          links: b.links || [],
           customerLink: b.id === "marketplace" ? "#portfolio" : null,
           partnerLink: b.id === "marketplace" ? "#academy" : null
         }));
@@ -39,6 +40,7 @@ export default function Brands({ isDark }) {
             desc: b.desc,
             status: b.status,
             statusType: b.status.includes("Live") ? "success" : "muted",
+            links: b.links || [],
             customerLink: b.id === "marketplace" ? "#portfolio" : null,
             partnerLink: b.id === "marketplace" ? "#academy" : null
           }));
@@ -56,6 +58,7 @@ export default function Brands({ isDark }) {
             desc: b.desc,
             status: b.status,
             statusType: b.status.includes("Live") ? "success" : "muted",
+            links: b.links || [],
             customerLink: b.id === "marketplace" ? "#portfolio" : null,
             partnerLink: b.id === "marketplace" ? "#academy" : null
           }));
