@@ -1,4 +1,5 @@
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -71,7 +72,10 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} font-sans h-full scroll-smooth antialiased dark`}>
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 transition-colors duration-300">{children}</body>
+      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 transition-colors duration-300">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
